@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.3.0] - 2025-10-03
+
+### Added
+- Enhanced CLI with GitHub repository URL support to include repository information from `package.json`.
+- Introduced `--no-git-links` flag to control the inclusion of Git commit links in changelog entries.
+
+### Changed
+- Updated changelog generation logic to conditionally include GitHub links based on the `--no-git-links` flag.
+
 ## [0.2.0] - 2025-10-03
 
 ### Changed
@@ -41,4 +50,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - Fixed version option conflict with yargs built-in version
+
 
