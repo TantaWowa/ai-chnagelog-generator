@@ -190,6 +190,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 async function generateChangelog() {
   const argv = yargs(hideBin(process.argv))
+    .version(false) // Disable built-in version to avoid conflict
     .usage('Usage: $0 [options]')
     .option('version', {
       alias: 'v',
@@ -232,6 +233,12 @@ async function generateChangelog() {
       type: 'string',
       description: 'Generate changelog since this date (e.g., "2024-01-01" or "1 week ago")'
     })
+    .option('test', {
+      type: 'boolean',
+      default: false,
+      description: 'Test mode - use mock AI response instead of real API calls',
+      hidden: true
+    })
     .help()
     .alias('help', 'h')
     .example('$0 -v 1.2.0', 'Generate changelog for version 1.2.0')
@@ -244,7 +251,7 @@ async function generateChangelog() {
   try {
     // Get API key from argument or environment variable
     let apiKey = argv['api-key'];
-    if (!apiKey) {
+    if (!argv.test && !apiKey) {
       if (argv.provider === 'xai') {
         apiKey = process.env.XAI_API_KEY || process.env.X_API_KEY;
       } else {
@@ -252,7 +259,7 @@ async function generateChangelog() {
       }
     }
 
-    if (!apiKey) {
+    if (!argv.test && !apiKey) {
       console.error(`Error: API key required. Set ${argv.provider === 'xai' ? 'XAI_API_KEY' : 'OPENAI_API_KEY'} environment variable or use --api-key option.`);
       process.exit(1);
     }
@@ -266,17 +273,32 @@ async function generateChangelog() {
       process.exit(1);
     }
 
-    // Initialize AI provider
-    console.log(`Using ${argv.provider.toUpperCase()} to generate changelog...`);
-    let provider;
-    if (argv.provider === 'xai') {
-      provider = new XAIProvider(apiKey);
-    } else {
-      provider = new OpenAIProvider(apiKey);
-    }
+    // Initialize AI provider and generate changelog
+    let changelog;
+    if (argv.test) {
+      // Test mode - use mock response
+      changelog = `## [${argv.version}] - ${new Date().toISOString().split('T')[0]}
 
-    // Generate changelog
-    const changelog = await provider.generateChangelog(gitLog, argv.version);
+### Added
+- Initial AI changelog generator implementation
+- Support for XAI and OpenAI providers
+- Command line interface with yargs
+
+### Changed
+- Updated package.json with proper CLI configuration
+
+### Fixed
+- Fixed version option conflict with yargs built-in version`;
+    } else {
+      console.log(`Using ${argv.provider.toUpperCase()} to generate changelog...`);
+      let provider;
+      if (argv.provider === 'xai') {
+        provider = new XAIProvider(apiKey);
+      } else {
+        provider = new OpenAIProvider(apiKey);
+      }
+      changelog = await provider.generateChangelog(gitLog, argv.version);
+    }
 
     if (argv['dry-run']) {
       console.log('\n--- Generated Changelog (Dry Run) ---');
