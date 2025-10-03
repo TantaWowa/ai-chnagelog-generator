@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.2.0] - 2025-10-03
+
+### Changed
+- Updated package name in `package.json` and workflow files for consistency.
+
 ## [0.1.0] - 2025-10-03
 
 ### Added
@@ -36,3 +41,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - Fixed version option conflict with yargs built-in version
+
