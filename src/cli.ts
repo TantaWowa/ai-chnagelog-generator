@@ -20,17 +20,48 @@ function getLastTag(): string {
   }
 }
 
-function getPackageInfo(): { version: string; name?: string } | null {
+function getPackageInfo(): { version: string; name?: string; repository?: string } | null {
   try {
     const pkgPath = resolve(process.cwd(), 'package.json');
     const pkg = JSON.parse(readFileSync(pkgPath, 'utf8'));
     return {
       version: pkg.version,
-      name: pkg.name
+      name: pkg.name,
+      repository: pkg.repository?.url || pkg.repository
     };
   } catch {
     return null;
   }
+}
+
+function getGitHubRepoUrl(): string | null {
+  // Try to get from package.json first
+  const pkg = getPackageInfo();
+  if (pkg?.repository) {
+    const repoUrl = typeof pkg.repository === 'string' ? pkg.repository : pkg.repository;
+    if (repoUrl.includes('github.com')) {
+      // Convert SSH or HTTPS GitHub URLs to HTTPS format
+      const match = repoUrl.match(/github\.com[\/:]([^\/]+)\/([^\/\.]+)/);
+      if (match) {
+        return `https://github.com/${match[1]}/${match[2]}`;
+      }
+    }
+  }
+
+  // Fallback to git config
+  try {
+    const remoteUrl = sh('git config --get remote.origin.url').trim();
+    if (remoteUrl.includes('github.com')) {
+      const match = remoteUrl.match(/github\.com[\/:]([^\/]+)\/([^\/\.]+)/);
+      if (match) {
+        return `https://github.com/${match[1]}/${match[2]}`;
+      }
+    }
+  } catch {
+    // Git command failed, continue
+  }
+
+  return null;
 }
 
 function flag(name: string, args: string[]): string | boolean | undefined {
@@ -49,6 +80,7 @@ Options:
   --out <file>          Output to specific file
   --dry-run             Show preview without writing
   --provider <name>     AI provider: openai, xai (default: xai)
+  --no-git-links        Exclude Git commit links from changelog entries
   --help                Show this help
 
 Environment Variables:
@@ -59,6 +91,7 @@ Examples:
   ai-changelog --dry-run
   ai-changelog --from v1.0.0 --write
   ai-changelog --provider openai --out RELEASE_NOTES.md
+  ai-changelog --write --no-git-links
 `);
 }
 
@@ -76,6 +109,7 @@ async function main(): Promise<void> {
   const outPath = flag('--out', args) as string;
   const dryRun = Boolean(flag('--dry-run', args));
   const providerName = flag('--provider', args) as string || 'xai';
+  const includeGitLinks = !Boolean(flag('--no-git-links', args)); // Default to true, can be disabled with --no-git-links
 
   const changelogPath = resolve(process.cwd(), 'CHANGELOG.md');
   const range = fromRef ? `${fromRef}..${toRef}` : toRef;
@@ -121,6 +155,12 @@ async function main(): Promise<void> {
     process.exit(1);
   }
 
+  // Get GitHub repo URL for links
+  const githubUrl = includeGitLinks ? getGitHubRepoUrl() : null;
+  if (includeGitLinks && !githubUrl) {
+    console.warn('⚠️  Could not detect GitHub repository URL. Git links will be omitted.');
+  }
+
   console.log(`📝 Found ${commits.length} commits`);
 
   // Initialize provider
@@ -161,7 +201,10 @@ async function main(): Promise<void> {
   const input = {
     version,
     date: today,
-    commits: commits.map(({ subject, body }) => ({ subject, body })),
+    commits: commits.map(({ subject, body, hash }) => ({
+      subject: includeGitLinks && githubUrl ? `${subject} ([${hash.substring(0, 8)}](${githubUrl}/commit/${hash}))` : subject,
+      body
+    })),
   };
 
   let generated: string;
