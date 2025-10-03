@@ -1,0 +1,33 @@
+{
+  "name": "ai-changelog-generator",
+  "version": "1.0.0",
+  "description": "An npm command line tool that generates changelogs in keep-a-changelog format using OpenAI or XAI",
+  "main": "src/index.js",
+  "bin": {
+    "ai-changelog": "bin/cli.js"
+  },
+  "scripts": {
+    "start": "node bin/cli.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "changelog",
+    "ai",
+    "openai",
+    "xai",
+    "keep-a-changelog",
+    "cli",
+    "generator"
+  ],
+  "author": "Tantawowa",
+  "license": "MIT",
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "dependencies": {
+    "axios": "^1.12.2",
+    "fs-extra": "^11.3.2",
+    "openai": "^6.1.0",
+    "yargs": "^18.0.0"
+  }
+}
