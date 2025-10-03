@@ -91,7 +91,7 @@ jobs:
           ### Installation
 
           ```bash
-          npm install @tantawowa/ai-changelog-generator@${{ inputs.version }}
+          npm install ai-changelog-generator@${{ inputs.version }}
           ```
         draft: false
         prerelease: false

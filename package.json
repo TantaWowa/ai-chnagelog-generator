@@ -1,5 +1,5 @@
 {
-  "name": "@tantawowa/ai-changelog-generator",
+  "name": "ai-changelog-generator",
   "version": "0.1.0",
   "description": "An npm command line tool that generates changelogs in keep-a-changelog format using OpenAI or XAI",
   "main": "dist/index.js",
